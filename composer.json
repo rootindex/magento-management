@@ -1,0 +1,13 @@
+{
+  "name": "rootindex/magento-management",
+  "description": "Manage Magento site, enabling easy deployment strategies",
+  "minimum-stability": "stable",
+  "type": "project",
+  "license": "proprietary",
+  "authors": [
+    {
+      "name": "Francois Raubenheimer",
+      "email": "fran@fontera.com"
+    }
+  ]
+}
