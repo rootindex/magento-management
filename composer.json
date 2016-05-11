@@ -1,6 +1,6 @@
 {
   "name": "rootindex/magento-management",
-  "description": "Manage Magento site, enabling easy deployment strategies",
+  "description": "Manage Magento websites, enabling easy deployment strategies",
   "minimum-stability": "stable",
   "type": "project",
   "license": "proprietary",
