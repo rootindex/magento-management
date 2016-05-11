@@ -1,0 +1,42 @@
+## Magento 2 Management Configuration
+project_name="Magento 2 Website"
+server_username="www-data"
+
+## Magento settings
+# magento installation root
+magento_root=/var/www/magento-2-website
+# auto clear cache if
+m2_clear_cache=true
+# auto di compile
+m2_compiles_code=false
+# auto di compile all - if true set m2_compiles_code=false
+m2_compile_code_all=true
+# deploy static content
+m2_deploy_static_content=true
+# add static content to tmpfs
+m2_static_content_tmpfs=true
+
+## Git settings
+# git fetch and checkout
+git_update=false
+# branch to work from [master|staging|development]
+git_branch=master
+# update git submodules init, sync and update
+git_submodule_update=false
+
+# Composer settings
+# enable composer updates
+composer_enable=false
+# decide on deployment strategy [install|upgrade]
+composer_strategy=install
+
+# Nginx settings
+nginx_restart=false
+
+# Redis settings
+redis_port=6379
+redis_host=127.0.0.1
+redis_flush=false
+
+# Varnish settings
+varnish_restart=false

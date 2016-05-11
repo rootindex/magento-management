@@ -1,2 +1,2 @@
-!conf/example.conf.dist
 conf/*
+!conf/example.conf.dist
