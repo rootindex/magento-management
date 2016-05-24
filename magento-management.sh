@@ -62,13 +62,10 @@ git_sub_process(){
     fi
 }
 
-magento_root_exists(){
+magento_exists(){
     # make sure magento directory exists
     [ ! -d ${magento_root} ] || [ -z ${magento_root} ] && ( echo -e "${C_ERROR}Magento${C_RESET} :: Project does not exist"; exit 1; )
-    return 0;
-}
 
-magento_binary_xst(){
     # binary is executable
     if [ ! -x "${magento_root}/bin/magento" ]; then
         echo -e "${C_ERROR}Magento${C_RESET} :: Binary permissions problem" \
@@ -108,72 +105,128 @@ composer_sub_process()
     return 0;
 }
 
-magento_clear_cache(){
+magento_sub_process(){
+    ## Lets run this first to ensure integrity
+    if [ ${m2_static_content_tmpfs} = true ]; then
+
+        if mountpoint -q ${magento_root}/pub; then
+            echo -e "${C_SUCCESS}OS${C_RESET} :: Mount /pub exists and is ready!";
+        else
+            echo -e "${C_INFO}OS${C_INFO} :: Mount /pub does not exist, creating it!";
+            cp -R ${magento_root}/pub ${magento_root}/.pub;
+            mount -t tmpfs -o size=${m2_static_content_tmpfs_size} tmpfs ${magento_root}/pub;
+            cp -R ${magento_root}/.pub ${magento_root}/pub;
+            rm -rf ${magento_root}/.pub;
+            echo -e "${C_INFO}OS${C_RESET} :: Mount /pub Created!";
+        fi
+    fi;
+
     if [ ${m2_clear_cache} = true ]; then
         echo -e "${C_SUCCESS}Magento Manager${C_RESET} :: Flushing all caches!";
         sudo -u ${server_username} ${php_bin} ${magento_root}/bin/magento cache:flush;
+        sudo -u ${server_username} rm -rf ${magento_root}/var/cache/*
+        sudo -u ${server_username} rm -rf ${magento_root}/var/generation/*
+        sudo -u ${server_username} rm -rf ${magento_root}/view_preprocessed/*
+        sudo -u ${server_username} rm -rf ${magento_root}/page_cache/*
+        sudo -u ${server_username} rm -rf ${magento_root}/static/frontend/*
+        sudo -u ${server_username} rm -rf ${magento_root}/static/backend/*
     fi;
-}
 
-magento_compile_di()
-{
     if [ ${m2_compile_code} = true ]; then
         echo -e "${C_SUCCESS}Magento Manager${C_RESET} :: Generates DI!";
         sudo -u ${server_username} ${php_bin} ${magento_root}/bin/magento setup:di:compile;
     fi;
-}
 
-magento_compile_di_all()
-{
     if [ ${m2_compile_code_all} = true ]; then
         echo -e "${C_SUCCESS}Magento Manager${C_RESET} :: Generates DI Multi-tenant!";
         sudo -u ${server_username} ${php_bin} ${magento_root}/bin/magento setup:di:compile-multi-tenant;
     fi;
-}
 
-magento_deploy_static_content()
-{
     if [ ${m2_deploy_static_content} = true ]; then
         echo -e "${C_SUCCESS}Magento Manager${C_RESET} :: Deploying static content!";
         sudo -u ${server_username} ${php_bin} ${magento_root}/bin/magento setup:static-content:deploy;
     fi;
+
+    if [ ${m2_should_reindex} = true ]; then
+        echo -e "${C_SUCCESS}Magento Manager${C_RESET} :: Running Indexer!";
+        sudo -u ${server_username} ${php_bin} ${magento_root}/bin/magento indexer:reindex;
+    fi;
+
 }
 
-magento_static_content_tmpfs()
-{
-    if [ ${m2_static_content_tmpfs} = true ]; then
-        echo mount -o tmpfs
+restart_nginx(){
+    if [ ${nginx_restart} = true ]; then
+        ${nginx_initd_script} stop
+        ${nginx_initd_script} start
     fi;
 }
 
+restart_phpfpm(){
+    if [ ${phpfpm_restart} = true ]; then
+        ${phpfpm_initd_script} stop
+        ${phpfpm_initd_script} start
+    fi;
+}
+
+restart_varnish(){
+    if [ ${varnish_restart} = true ]; then
+        ${varnish_initd_script} stop
+        ${varnish_initd_script} start
+    fi;
+}
+
+flush_redis_app(){
+    if [ ${redis_flush_app} = true ]; then
+        redis-cli -h ${redis_app_host} -p ${redis_app_port} flushall
+    fi;
+}
+
+flush_redis_sessions(){
+    if [ ${redis_flush_sessions} = true ]; then
+        redis-cli -h ${redis_sessions_host} -p ${redis_sessions_port} flushall
+    fi;
+}
+
+magento_maintenance_mode(){
+    echo -e "${C_SUCCESS}Magento Manager${C_RESET} :: Setting up Maintenance Mode!";
+    sudo -u ${server_username} ${php_bin} ${magento_root}/bin/magento magento maintenance:enable;
+}
+
+magento_maintenance_mode_off(){
+    echo -e "${C_SUCCESS}Magento Manager${C_RESET} :: Turning off Maintenance Mode!";
+    sudo -u ${server_username} ${php_bin} ${magento_root}/bin/magento magento maintenance:disable;
+}
+
 magento_management(){
+
     # include default vars
     [ -f "${working_script_path}/defaults.conf" ] && ( source "${working_script_path}/defaults.conf" )
     # load and shot all available projects
     create_menu;
     # make sure we have a working magento 2 copy
-    magento_root_exists;
     # ensure magento binary exist and can be run
-    magento_binary_xst;
+    magento_exists;
+
     # git first as it might contain updates
     git_sub_process;
-
     # check if we shouldn't use local php
     php_bin=$(which php);
     if [ -x "${php_binary}" ]; then
         php_bin="${php_binary}";
     fi
-
     # deploy code via composer
     composer_sub_process;
-
-    # clear caches
-    magento_clear_cache;
-    magento_compile_di;
-    magento_compile_di_all;
-    magento_deploy_static_content;
-    magento_static_content_tmpfs;
-
+    # magento sub routines
+    magento_sub_process;
+    # restart nginx if configured
+    restart_nginx;
+    # restart php-fpm if configured
+    restart_phpfpm;
+    # restart varnish if configured
+    restart_varnish;
+    # flush redis if required
+    flush_redis_app;
+    flush_redis_sessions;
 
     # all done lets exit
     echo -e "${C_SUCCESS}Magento Manager${C_RESET} :: All scripts has been processed!";
