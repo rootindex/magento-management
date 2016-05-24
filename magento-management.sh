@@ -107,6 +107,9 @@ composer_sub_process()
 
 magento_sub_process(){
     ## Lets run this first to ensure integrity
+    local user_id = $(id -u ${server_username});
+    local group_id = $(id -g ${server_username});
+
     if [ ${m2_static_content_tmpfs} = true ]; then
 
         if mountpoint -q ${magento_root}/pub; then
@@ -114,7 +117,8 @@ magento_sub_process(){
         else
             echo -e "${C_INFO}OS${C_INFO} :: Mount /pub does not exist, creating it!";
             sudo -u ${server_username} cp -R ${magento_root}/pub ${magento_root}/.pub;
-            sudo -u ${server_username} mount -t tmpfs -o size=${m2_static_content_tmpfs_size} tmpfs ${magento_root}/pub;
+            mount -t tmpfs -o size=${m2_static_content_tmpfs_size},umask=0775,gid=${user_id},uid=${group_id} tmpfs ${magento_root}/pub;
+            chown ${server_username}:${server_username} ${magento_root}/pub
             sudo -u ${server_username} cp -R ${magento_root}/.pub/* ${magento_root}/pub/;
             sudo -u ${server_username} rm -rf ${magento_root}/.pub;
             echo -e "${C_INFO}OS${C_RESET} :: Mount /pub Created!";
