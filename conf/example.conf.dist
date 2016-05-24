@@ -1,42 +1,57 @@
 ## Magento 2 Management Configuration
+## Please no spaces in exports
 project_name="Magento 2 Website"
 server_username="www-data"
+php_binary=""
 
 ## Magento settings
 # magento installation root
-magento_root=/var/www/magento-2-website
+magento_root=/var/www/vhosts/website
 # auto clear cache if
-m2_clear_cache=true
+m2_clear_cache=false
 # auto di compile
-m2_compiles_code=false
+m2_compile_code=false
 # auto di compile all - if true set m2_compiles_code=false
-m2_compile_code_all=true
+m2_compile_code_all=false
 # deploy static content
-m2_deploy_static_content=true
+m2_deploy_static_content=false
 # add static content to tmpfs
 m2_static_content_tmpfs=true
+# static content tmpfs size
+m2_static_content_tmpfs_size=300m
+# reindex
+m2_should_reindex=true
 
 ## Git settings
-# git fetch and checkout
+# git pull code
 git_update=false
-# branch to work from [master|staging|development]
 git_branch=master
-# update git submodules init, sync and update
-git_submodule_update=false
+git_submodule_update=true
 
 # Composer settings
-# enable composer updates
 composer_enable=false
-# decide on deployment strategy [install|upgrade]
+# install|upgrade
 composer_strategy=install
 
 # Nginx settings
 nginx_restart=false
+nginx_initd_script=/etc/init.d/nginx
 
-# Redis settings
-redis_port=6379
-redis_host=127.0.0.1
-redis_flush=false
+# php-fpm restart
+phpfpm_restart=false
+phpfpm_initd_script=/etc/init.d/php5-fpm
+
+# Redis settings app
+redis_app_flush_app=false
+redis_app_port=6383
+redis_app_host=127.0.0.1
+
+# Redis settings cache
+redis_flush_sessions=false
+redis_sessions_port=6382
+redis_sessions_host=127.0.0.1
+
 
 # Varnish settings
 varnish_restart=false
+varnish_initd_script=
