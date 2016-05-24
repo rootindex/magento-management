@@ -113,10 +113,10 @@ magento_sub_process(){
             echo -e "${C_SUCCESS}OS${C_RESET} :: Mount /pub exists and is ready!";
         else
             echo -e "${C_INFO}OS${C_INFO} :: Mount /pub does not exist, creating it!";
-            cp -R ${magento_root}/pub ${magento_root}/.pub;
-            mount -t tmpfs -o size=${m2_static_content_tmpfs_size} tmpfs ${magento_root}/pub;
-            cp -R ${magento_root}/.pub ${magento_root}/pub;
-            rm -rf ${magento_root}/.pub;
+            sudo -u ${server_username} cp -R ${magento_root}/pub ${magento_root}/.pub;
+            sudo -u ${server_username} mount -t tmpfs -o size=${m2_static_content_tmpfs_size} tmpfs ${magento_root}/pub;
+            sudo -u ${server_username} cp -R ${magento_root}/.pub/* ${magento_root}/pub/;
+            sudo -u ${server_username} rm -rf ${magento_root}/.pub;
             echo -e "${C_INFO}OS${C_RESET} :: Mount /pub Created!";
         fi
     fi;
@@ -124,12 +124,12 @@ magento_sub_process(){
     if [ ${m2_clear_cache} = true ]; then
         echo -e "${C_SUCCESS}Magento Manager${C_RESET} :: Flushing all caches!";
         sudo -u ${server_username} ${php_bin} ${magento_root}/bin/magento cache:flush;
-        sudo -u ${server_username} rm -rf ${magento_root}/var/cache/*
-        sudo -u ${server_username} rm -rf ${magento_root}/var/generation/*
-        sudo -u ${server_username} rm -rf ${magento_root}/view_preprocessed/*
-        sudo -u ${server_username} rm -rf ${magento_root}/page_cache/*
-        sudo -u ${server_username} rm -rf ${magento_root}/static/frontend/*
-        sudo -u ${server_username} rm -rf ${magento_root}/static/backend/*
+        sudo -u ${server_username} rm -rf ${magento_root}/var/cache
+        sudo -u ${server_username} rm -rf ${magento_root}/var/generation
+        sudo -u ${server_username} rm -rf ${magento_root}/view_preprocessed
+        sudo -u ${server_username} rm -rf ${magento_root}/page_cache
+        sudo -u ${server_username} rm -rf ${magento_root}/static/frontend
+        sudo -u ${server_username} rm -rf ${magento_root}/static/backend
     fi;
 
     if [ ${m2_compile_code} = true ]; then
